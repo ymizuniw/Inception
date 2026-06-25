@@ -87,3 +87,9 @@ listen = 127.0.0.1:9000
    define('DB_HOST',     '127.0.0.1');
    ```
 
+
+## Tacks for mariadb docker compose configuration
+- docker compose の設定で/var/lib/mysqlのデータを/home/ymizuniw/data/にマウントする。
+- 初期状態ではdocker compose を利用したデータベース設定をする必要があるので、既存のentrypoint.sh を流用・一部改変して環境変数から動的に値を取得し初期データベースを作成する。名前付きボリュームであるmariadb_data:/var/lib/mysqlなどを参照して初期化するか否かを判定するロジックが必要。
+- confはCOPYでイメージに焼く。
+
