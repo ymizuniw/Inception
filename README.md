@@ -1,38 +1,83 @@
-# The structure and functionalities of docker-compose.yml
+# Inception
 
-## 1.nginx
-- build with Dockerfile in requirements/nginx
-- the named volume "wordpress_website_files" is mounted at /var/www/html in the container
-- the file requirements/nginx/conf/nginx.conf is bind mounted at /etc/nginx/nginx.conf in the container
-- the port 443(SSL) is opend for the access from the hsot port 443
-- the docker network name is "wp_network"
+## Project Overview
 
-## 2.mariadb
-- build with Dockerfile in requrements/mariadb
-- the named volume "wordpress_data" is mounted at /var/lib/mysql in the container
-- the docker network name is "wp_network"
-### environment
-- the name of the DB is "wordpress"
-- the user name is ymizuniw
-- the secret file path that contains the root password of the DB is /run/secrets/db_root_password.txt
-- the secret file path that contains the user password of the DB is /run/secrets/db_password.txt
-### secrets
-- the secret names are db_root_password and db_password
+Docker-based infrastructure with three isolated containers, each running on its own Debian Bookworm (or Alpine 3.23 stable) image.
 
-## 3.wordpress
-- build with Dockerfile in requirements/wordpress
-- the named volume "wordpress_website_files" is mounted at /var/www/html in the container (that is shared with nginx container)
-- wordpress depends on mariadb (nginx intermidiates, but not depends on or depended on by wordpress or mariadb)
-- the docker network name "wp_network"
+## Services
 
-## secrets definition
-- the secret label "db_root_password" is the file located at ../secrets/db_root_password.txt on the host
-- the secret label "db_password" is the file located at ../secrets/db_password.txt on the host
+| Service | Description |
+|---|---|
+| **nginx** | Reverse proxy. TLS 1.2 or 1.3 only. Port 443 exclusively. |
+| **WordPress + PHP-FPM** | WordPress served via PHP-FPM. Same container image. |
+| **MariaDB** | Database backend. Two accounts: admin and user. |
 
-## volumes definition
-- the named volume "wordpress_website_files" is a local driver created at /home/ymizuniw/data/www
-- the named volume "wordpress_data" is a local driver created at /home/ymizuniw/data/db
+## Directory Structure
 
-## network definition
-- the docker network "wp_network" is defined
+```
+.
+├── Makefile
+├── secrets/
+│   ├── credentials.txt
+│   ├── db_password.txt
+│   └── db_root_password.txt
+└── srcs/
+    ├── .env
+    ├── docker-compose.yml
+    └── requirements/
+        ├── mariadb/
+        │   ├── .dockerignore
+        │   ├── Dockerfile
+        │   ├── conf/
+        │   └── tools/
+        ├── nginx/
+        │   ├── .dockerignore
+        │   ├── Dockerfile
+        │   ├── conf/
+        │   └── tools/
+        └── wordpress/
+            ├── .dockerignore
+            ├── Dockerfile
+            ├── conf/
+            └── tools/
+```
 
+## Volumes
+
+Two named volumes. Bind mounts are **not** allowed for these.
+
+| Volume | Purpose | Host path |
+|---|---|---|
+| `wp-db` | MariaDB data | `~/data/db` |
+| `wp-files` | WordPress static files | `~/data/wordpress` |
+
+Driver: `local` with `bind` option pointing to the host path above.
+
+## Network
+
+Single Docker network: `wp-network`
+
+All three containers are attached to this network.
+
+## Environment Variables
+
+### `srcs/.env` (non-secret values)
+
+- `DOMAIN_NAME` — server domain name mapped to local IP
+- `MYSQL_USER` — database username
+- Any other non-secret environment variables
+
+### `secrets/` (sensitive values)
+
+- `db_password.txt` — database user password
+- `db_root_password.txt` — database root/admin password
+- `credentials.txt` — other credentials
+
+Secrets are passed via Docker secrets (file-based, not swarm mode).
+
+## Networking Rules
+
+- Only port **443** (HTTPS) is exposed to the outside.
+- nginx handles TLS termination (TLS 1.2 or 1.3).
+- nginx communicates with WordPress container internally.
+- WordPress communicates with MariaDB internally.

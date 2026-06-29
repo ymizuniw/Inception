@@ -1,11 +1,16 @@
 FROM debian:bookworm
 
-RUN apt update && apt install -y mariadb-server mariadb-client
+RUN apt update && apt install -y mariadb-server mariadb-client && rm -rf /var/lib/apt/lists/*
 
-ENV MARIADB_DATABASE=test_db
-ENV MARIADB_USER=user
-ENV MARIADB_PASSWORD=user 
-ENV MARIADB_ROOT_PASSWORD=root
+COPY conf/my.cnf /etc/mysql/my.cnf
+COPY tools/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+RUN mkdir /run/mysqld && chown mysql:mysql /run/mysqld
+RUN rm -rf /var/lib/mysql
+
+ENV ADMIN_NAME=admin
+ENV USER_NAME=user1
 
 EXPOSE 3306
 
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
