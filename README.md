@@ -48,8 +48,8 @@ Two named volumes. Bind mounts are **not** allowed for these.
 
 | Volume | Purpose | Host path |
 |---|---|---|
-| `wp-db` | MariaDB data | `~/data/db` |
-| `wp-files` | WordPress static files | `~/data/wordpress` |
+| `wp_data` | MariaDB data | `~/data/db` |
+| `wp_www` | WordPress static files | `~/data/wordpress` |
 
 Driver: `local` with `bind` option pointing to the host path above.
 
