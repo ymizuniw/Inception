@@ -81,3 +81,37 @@ Secrets are passed via Docker secrets (file-based, not swarm mode).
 - nginx handles TLS termination (TLS 1.2 or 1.3).
 - nginx communicates with WordPress container internally.
 - WordPress communicates with MariaDB internally.
+
+## Design Choices
+
+### Virtual Machines vs Docker
+
+A VM runs its own kernel and OS on top of a hypervisor (Type 2, e.g. VirtualBox, UTM). The hypervisor allocates CPU, memory, and storage at setup time. Those resources are held by the VM whether it uses them or not.
+
+Docker shares the Linux kernel of the host machine. Containers do not boot their own OS. Instead, each container gets a minimal Linux base image and is isolated using namespaces (PID, network, mount, IPC, user, UTS) and cgroups. Cgroups allocate resources at container start and release them when the container stops.
+
+The result: containers start in seconds, use only the resources they need at runtime, and require no ISO download or OS setup.
+
+The trade-off: containers share the host kernel, so isolation is at the OS level. VMs are isolated at the hardware level via the hypervisor. For this project, OS-level isolation is sufficient.
+
+### Docker Network vs Host Network
+
+Host network mode drops a container straight onto the host's network stack: no isolation, no container-specific DNS name, and if a container is compromised, every interface and port on the host is directly reachable.
+
+This project instead creates a dedicated bridge network (`wp-network`) for the three containers. Each container gets its own network namespace, and can reach the others by service name (e.g. `wordpress`, `mariadb`) instead of an IP address, since Docker provides embedded DNS resolution within the network. A compromised container is confined to that namespace — only explicitly exposed ports are visible outside it — instead of exposing the entire host network stack.
+
+### Docker Volumes vs Bind Mounts
+
+A named volume is a name and a storage path owned and managed by Docker (under its own storage driver), independent of any specific host directory layout. A bind mount instead shares an existing directory on the host machine directly, in real time.
+
+Bind mounts tie the container to the host's filesystem structure, making the setup non-portable to other machines. They also increase the security surface: since the container has direct access to a host directory rather than a Docker-managed, separated volume, a compromised container process can read or write host files outside its own isolation boundary. This is why this project uses named volumes (`wp_data`, `wp_www`) instead of bind mounts.
+
+## Security Considerations
+
+### Environment variables vs Docker secrets
+
+Values passed via `environment:` in `docker-compose.yml` (including those sourced from `.env`) end up as plain process environment variables inside the container. Any code execution inside that container — for example through a WordPress plugin vulnerability or a malicious file upload — can read them back with `printenv`, `getenv()`, or `/proc/self/environ`. Since WordPress needs the database password to connect, a compromised WordPress process could leak the MariaDB password this way, giving an attacker access to the whole database, not just their own account, and enabling credential reuse attacks elsewhere.
+
+This is why passwords (`db_password.txt`, `db_root_password.txt`, `credentials.txt`) are kept out of `.env` and mounted as files under `secrets/` instead. Docker secrets are exposed to the container as files (typically under `/run/secrets/`), not as environment variables, so they aren't dumped by a simple `printenv` or process-inspection call. The application is expected to read the secret file at startup rather than an env var.
+
+Only `DOMAIN_NAME`, `MYSQL_USER`, and other non-sensitive values live in `.env`.
