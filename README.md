@@ -20,7 +20,9 @@ Docker-based infrastructure with three isolated containers, each running on its 
 ├── secrets/
 │   ├── credentials.txt
 │   ├── db_password.txt
-│   └── db_root_password.txt
+│   ├── db_root_password.txt
+│   ├── wp_admin_password.txt
+│   └── wp_user_password.txt
 └── srcs/
     ├── .env
     ├── docker-compose.yml
@@ -65,15 +67,28 @@ All three containers are attached to this network.
 
 - `DOMAIN_NAME` — server domain name mapped to local IP
 - `MYSQL_USER` — database username
+- `ADMIN_NAME`, `USER_NAME` — MariaDB account names (root-equivalent and WordPress DB user)
+- `WP_ADMIN_NAME`, `WP_ADMIN_EMAIL` — WordPress admin account created via `wp-cli`. Per subject rules, the name must not contain "admin", "Admin", "administrator", etc.
+- `WP_USER_NAME`, `WP_USER_EMAIL` — second, non-admin WordPress account created via `wp-cli`
 - Any other non-secret environment variables
 
 ### `secrets/` (sensitive values)
 
 - `db_password.txt` — database user password
 - `db_root_password.txt` — database root/admin password
+- `wp_admin_password.txt` — WordPress admin account password
+- `wp_user_password.txt` — WordPress regular user account password
 - `credentials.txt` — other credentials
 
 Secrets are passed via Docker secrets (file-based, not swarm mode).
+
+Password files are not committed with real values in this write-up; each is generated locally with a strong random string, e.g.:
+
+```sh
+openssl rand -base64 24 > secrets/wp_admin_password.txt
+```
+
+Same approach for `db_password.txt`, `db_root_password.txt`, and `wp_user_password.txt`.
 
 ## Networking Rules
 
@@ -112,6 +127,6 @@ Bind mounts tie the container to the host's filesystem structure, making the set
 
 Values passed via `environment:` in `docker-compose.yml` (including those sourced from `.env`) end up as plain process environment variables inside the container. Any code execution inside that container — for example through a WordPress plugin vulnerability or a malicious file upload — can read them back with `printenv`, `getenv()`, or `/proc/self/environ`. Since WordPress needs the database password to connect, a compromised WordPress process could leak the MariaDB password this way, giving an attacker access to the whole database, not just their own account, and enabling credential reuse attacks elsewhere.
 
-This is why passwords (`db_password.txt`, `db_root_password.txt`, `credentials.txt`) are kept out of `.env` and mounted as files under `secrets/` instead. Docker secrets are exposed to the container as files (typically under `/run/secrets/`), not as environment variables, so they aren't dumped by a simple `printenv` or process-inspection call. The application is expected to read the secret file at startup rather than an env var.
+This is why passwords (`db_password.txt`, `db_root_password.txt`, `wp_admin_password.txt`, `wp_user_password.txt`, `credentials.txt`) are kept out of `.env` and mounted as files under `secrets/` instead. Docker secrets are exposed to the container as files (typically under `/run/secrets/`), not as environment variables, so they aren't dumped by a simple `printenv` or process-inspection call. The application is expected to read the secret file at startup rather than an env var.
 
-Only `DOMAIN_NAME`, `MYSQL_USER`, and other non-sensitive values live in `.env`.
+Only `DOMAIN_NAME`, `MYSQL_USER`, account names (`ADMIN_NAME`, `USER_NAME`, `WP_ADMIN_NAME`, `WP_USER_NAME`), emails (`WP_ADMIN_EMAIL`, `WP_USER_EMAIL`), and other non-sensitive values live in `.env`.
