@@ -27,9 +27,9 @@ fi
 mariadb -uroot -h localhost <<-EOF
   CREATE USER '${ADMIN_NAME}'@'localhost' IDENTIFIED BY '${ADMIN_PASSWORD}';
   GRANT ALL PRIVILEGES ON *.* TO '${ADMIN_NAME}'@'localhost';
-  CREATE USER '${USER_NAME}'@'%' IDENTIFIED BY '${DB_PASSWORD}';
+  CREATE USER '${DB_USER}'@'%' IDENTIFIED BY '${DB_PASSWORD}';
   CREATE DATABASE wordpress;
-  GRANT ALL PRIVILEGES ON wordpress.* TO '${USER_NAME}'@'%';
+  GRANT ALL PRIVILEGES ON wordpress.* TO '${DB_USER}'@'%';
   FLUSH PRIVILEGES;
 EOF
 

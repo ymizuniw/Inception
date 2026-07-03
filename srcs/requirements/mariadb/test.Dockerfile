@@ -8,8 +8,8 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 RUN mkdir /run/mysqld && chown mysql:mysql /run/mysqld
 RUN rm -rf /var/lib/mysql
 
-ENV ADMIN_NAME=admin
-ENV USER_NAME=user1
+ENV ADMIN_NAME=ymizuniw
+ENV DB_USER=user1
 
 EXPOSE 3306
 
