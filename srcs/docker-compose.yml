@@ -1,0 +1,91 @@
+services:
+  mariadb:
+    build:
+      context: requirements/mariadb
+      dockerfile: Dockerfile
+    container_name: mariadb
+    env_file: .env
+    secrets:
+      - source: db_password
+        target: db_password.txt
+      - source: db_root_password
+        target: db_root_password.txt
+    volumes:
+      - wp_data:/var/lib/mysql
+    networks:
+      - wp-network
+    restart: unless-stopped
+
+  wordpress:
+    build:
+      context: requirements/wordpress
+      dockerfile: Dockerfile
+    container_name: wordpress_php_fpm
+    env_file: .env
+    secrets:
+      - source: db_password
+        target: db_password.txt
+      - source: wp_admin_password
+        target: wp_admin_password.txt
+      - source: wp_user_password
+        target: wp_user_password.txt
+    volumes:
+      - wp_www:/var/www/wordpress
+    networks:
+      - wp-network
+    depends_on:
+      - mariadb
+    restart: unless-stopped
+
+  nginx:
+    build:
+      context: requirements/nginx
+      dockerfile: Dockerfile
+    container_name: nginx
+    env_file: .env
+    secrets:
+      - source: server_crt
+        target: server.crt
+      - source: server_key
+        target: server.key
+    volumes:
+      - wp_www:/var/www/wordpress
+    ports:
+      - "443:443"
+    networks:
+      - wp-network
+    depends_on:
+      - wordpress
+    restart: unless-stopped
+
+volumes:
+  wp_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${HOME}/data/db
+  wp_www:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: ${HOME}/data/wordpress
+
+networks:
+  wp-network:
+    driver: bridge
+
+secrets:
+  db_password:
+    file: ../secrets/db_password.txt
+  db_root_password:
+    file: ../secrets/db_root_password.txt
+  wp_admin_password:
+    file: ../secrets/wp_admin_password.txt
+  wp_user_password:
+    file: ../secrets/wp_user_password.txt
+  server_crt:
+    file: ../secrets/server.crt
+  server_key:
+    file: ../secrets/server.key

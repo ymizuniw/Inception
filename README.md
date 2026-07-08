@@ -67,7 +67,8 @@ All three containers are attached to this network.
 
 - `DOMAIN_NAME` — server domain name mapped to local IP
 - `DB_USER` — WordPress database user, also used as the WordPress DB account name in MariaDB
-- `ADMIN_NAME` — shared account name for the MariaDB root-equivalent user and the WordPress admin account created via `wp-cli`. Per subject rules, the name must not contain "admin", "Admin", "administrator", etc.
+- `DB_ADMIN_NAME` — MariaDB root-equivalent admin account (local-only)
+- `WP_ADMIN_NAME` — WordPress admin account created via `wp-cli`. Per subject rules, the name must not contain "admin", "Admin", "administrator", etc.
 - `WP_ADMIN_EMAIL` — WordPress admin account email
 - `WP_USER_NAME`, `WP_USER_EMAIL` — second, non-admin WordPress account created via `wp-cli`
 - Any other non-secret environment variables
@@ -129,4 +130,4 @@ Values passed via `environment:` in `docker-compose.yml` (including those source
 
 This is why passwords (`db_password.txt`, `db_root_password.txt`, `wp_admin_password.txt`, `wp_user_password.txt`, `credentials.txt`) are kept out of `.env` and mounted as files under `secrets/` instead. Docker secrets are exposed to the container as files (typically under `/run/secrets/`), not as environment variables, so they aren't dumped by a simple `printenv` or process-inspection call. The application is expected to read the secret file at startup rather than an env var.
 
-Only `DOMAIN_NAME`, `DB_USER`, account names (`ADMIN_NAME`, `WP_USER_NAME`), emails (`WP_ADMIN_EMAIL`, `WP_USER_EMAIL`), and other non-sensitive values live in `.env`.
+Only `DOMAIN_NAME`, `DB_USER`, account names (`DB_ADMIN_NAME`, `WP_ADMIN_NAME`, `WP_USER_NAME`), emails (`WP_ADMIN_EMAIL`, `WP_USER_EMAIL`), and other non-sensitive values live in `.env`.
