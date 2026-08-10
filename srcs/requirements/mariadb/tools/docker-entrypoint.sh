@@ -10,8 +10,8 @@ mariadbd --user=mysql &
 MARIADB_PID=$!
 
 DB_USER=${DB_USER}
-DB_PASSWORD=$(cat /run/secrets/db_password.txt)
-DB_ROOT_PASSWORD=$(cat /run/secrets/db_root_password.txt)
+DB_PASSWORD=$(cat /run/secrets/db_password)
+DB_ROOT_PASSWORD=$(cat /run/secrets/db_root_password)
 
 for i in {30..0}; do
 	if mariadb << -EOF
