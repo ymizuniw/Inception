@@ -1,0 +1,10 @@
+# Runtime packages for the wordpress (php-fpm) service.
+# Only top-level packages: dependencies (php-common, php8.2-opcache, ...) are
+# pulled in and tracked by apt. Never list or remove them by hand — purging
+# php-common is what wiped /etc/php before.
+php8.2-fpm
+php8.2-mysql
+php8.2-cli
+mariadb-client
+# wp-cli downloads WordPress core over https at container start
+ca-certificates

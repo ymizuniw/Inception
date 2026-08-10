@@ -23,13 +23,13 @@ if ! wp core is-installed --allow-root; then
 		--url="$WP_HOME" \
 		--title="Inception" \
 		--admin_user="$WP_ADMIN" \
-		--admin_password="$(cat /run/secrets/wp_admin_password)" \
+		--admin_password="$(cat /run/secrets/wp_admin_password.txt)" \
 		--admin_email="$WP_ADMIN_EMAIL" \
 		--skip-email \
 		--allow-root
 	wp user create "$WP_USER" "$WP_USER_EMAIL" \
 		--role=author \
-		--user_pass="$(cat /run/secrets/wp_user_password)" \
+		--user_pass="$(cat /run/secrets/wp_user_password.txt)" \
 		--allow-root
 fi
 

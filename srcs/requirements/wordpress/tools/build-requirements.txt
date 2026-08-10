@@ -1,0 +1,4 @@
+# Build-only packages for the wordpress service.
+# Installed before the build steps and purged with this same list afterwards.
+# used once to download the wp-cli phar
+curl

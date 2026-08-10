@@ -1,0 +1,5 @@
+# Runtime packages for the mariadb service.
+# Only top-level packages: dependencies are resolved and tracked by apt,
+# so removing this exact list (purge + autoremove) is symmetric with install.
+mariadb-server
+mariadb-client
