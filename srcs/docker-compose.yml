@@ -3,6 +3,7 @@ services:
     build:
       context: requirements/mariadb
       dockerfile: Dockerfile
+    pull_policy: never
     image: mariadb
     container_name: mariadb
     env_file: .env
@@ -21,6 +22,7 @@ services:
     build:
       context: requirements/wordpress
       dockerfile: Dockerfile
+    pull_policy: never
     image:
       wordpress
     container_name: wordpress_php_fpm
@@ -44,6 +46,7 @@ services:
     build:
       context: requirements/nginx
       dockerfile: Dockerfile
+    pull_policy: never
     image: nginx
     container_name: nginx
     env_file: .env
