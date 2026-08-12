@@ -14,8 +14,8 @@ passwords via Docker secrets (file-based, not swarm).
 ## 0. Prerequisites
 
 - Docker Engine + Docker Compose v2 (`docker compose version`).
-- A host/VM with a domain resolvable to `127.0.0.1` (42 subject requires
-  `<login>.42.fr`). Add it to `/etc/hosts`:
+- A host/VM with a domain resolvable to `127.0.0.1` (The subject requires
+  `<login>.42.fr`). Add it to `/etc/hosts` ([name resolution in nginx](https://trac.nginx.org/nginx/ticket/2625)):
   ```sh
   echo "127.0.0.1 ymizuniw.42.fr" | sudo tee -a /etc/hosts
   ```
@@ -58,36 +58,32 @@ secrets/
 ## 3. Non-secret environment: `srcs/.env`
 
 ```sh
-export DOMAIN_NAME=ymizuniw.42.fr
-export WP_HOME=https://ymizuniw.42.fr
-export WP_SITEURL=https://ymizuniw.42.fr
-export DB_NAME=wordpress
-export DB_USER=db_user1
-export DB_ADMIN=ymizuniw
-export DB_HOST=mariadb
-export DB_CHARSET=utf8
+DOMAIN_NAME=ymizuniw.42.fr
+WP_HOME=https://ymizuniw.42.fr
+WP_SITEURL=https://ymizuniw.42.fr
+DB_NAME=wordpress
+DB_USER=db_user1
+DB_ADMIN=ymizuniw
+DB_HOST=mariadb
+DB_CHARSET=utf8
 
-export WP_ADMIN=ymizuniw
-export WP_ADMIN_EMAIL=manager@gmail.com
-export WP_USER=wp_user1
-export WP_USER_EMAIL=user@gmail.com
+WP_ADMIN=ymizuniw
+WP_ADMIN_EMAIL=manager@gmail.com
+WP_USER=wp_user1
+WP_USER_EMAIL=user@gmail.com
 ```
-
-Note: `WP_ADMIN` must **not** contain the substring "admin"/"Admin" — the
+> [!Note]
+> `WP_ADMIN` must **not** contain the substring "admin"/"Admin" — the
 subject forbids it in the WordPress admin username. Adjust the value, keep
 the variable name.
 
-`export` matters: scripts elsewhere in the repo do
-`set -a && source .env && set +a` to load these into a shell — plain
-`KEY=value` (no `export`) would not propagate to subprocesses the same way
-when sourced without `set -a`.
 
 ## 4. Secrets
 
-Docker secrets here are **file-based** (no Swarm), referenced directly by
-path in `docker-compose.yml`. Generate real random values locally — never
-commit them:
+> Docker Compose provides a way for you to use secrets without having to use environment variables to store information. If you’re injecting passwords and API keys as environment variables, you risk unintentional information exposure. Services can only access secrets when explicitly granted by a secrets attribute within the services top-level element.  
+[Manage secrets securely in Docker Compose](https://docs.docker.com/compose/how-tos/use-secrets/)
 
+- Generate random value for passwords by openssl utility ([OpenSSL Documentation -rand](https://docs.openssl.org/1.1.1/man1/rand/)).
 ```sh
 openssl rand -base64 24 > secrets/db_password.txt
 openssl rand -base64 24 > secrets/db_root_password.txt
@@ -95,15 +91,23 @@ openssl rand -base64 24 > secrets/wp_admin_password.txt
 openssl rand -base64 24 > secrets/wp_user_password.txt
 ```
 
-TLS certificate/key (self-signed, matches `DOMAIN_NAME`):
+- TLS certificate/key (self-signed, matches `DOMAIN_NAME`):
 
 ```sh
 openssl req -x509 -newkey rsa:2048 \
   -keyout secrets/server.key -out secrets/server.crt \
   -days 365 -nodes -subj "/CN=ymizuniw.42.fr"
 ```
+  - req
+  - -x509
+  - -newkey
+  - -keyout
+  - -out
+  - -days
+  - -nodes
+  - -subj  
 
-(This is what `srcs/requirements/nginx/tools/gen_cert.sh` automates.)
+([OpenSSL -req](https://docs.openssl.org/3.6/man1/openssl-req/#options))
 
 ## 5. MariaDB image
 
@@ -117,19 +121,16 @@ collation-server     = utf8mb4_unicode_ci
 bind-address = 0.0.0.0
 ```
 
-`bind-address = 0.0.0.0` is required so the WordPress container (a different
-network namespace, on `wp_network`) can reach MariaDB — the package default
-binds to localhost only.
+> `bind-address = 0.0.0.0` many debian package will set to localhost(127.0.0.1), then the setting should be commented out or overwritten by 0.0.0.0 in mariadb conf.
 
 `srcs/requirements/mariadb/tools/install_mariadb.sh`:
 
 ```sh
 apt update && apt install mariadb-server mariadb-client -y && rm -rf /var/lib/apt/lists/*
 ```
+> removing the apt cache by ```rm -fr /var/lib/apt/lists/*``` leads to shrink the image size though in Debian apt-get clean is automatically called ([Docker Docs Building best practices](https://docs.docker.com/build/building/best-practices/)).
 
-`srcs/requirements/mariadb/tools/docker-entrypoint.sh` (this is the
-container's real entrypoint — it both bootstraps the DB on first boot *and*
-becomes the long-running `mariadbd` process):
+`srcs/requirements/mariadb/tools/docker-entrypoint.sh`:
 
 ```sh
 #!/bin/bash
@@ -180,7 +181,7 @@ exec mariadbd --user=mysql
 Key points:
 - `-d /var/lib/mysql/mysql` check makes bootstrap run only once; on
   container restart with a populated volume, it skips straight to `exec
-  mariadbd`.
+  mariadbd`().
 - The bootstrap `mariadbd` is started in the background, killed after setup,
   then re-`exec`'d in the foreground so PID 1 is the real daemon (correct
   signal handling for `docker stop`).
