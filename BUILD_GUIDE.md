@@ -115,9 +115,13 @@ openssl req -x509 -newkey rsa:2048 \
 
 ```ini
 [mariadb]
-character-set-server = utf8mb4
-collation-server     = utf8mb4_bin
 
+datadir = /var/lib/mysql
+socket = /run/mysqld/mysqld.sock
+pid-file = /run/mysqld/mysqld.pid
+
+character-set-server = utf8mb4
+collation-server = utf8mb4_bin
 bind-address = 0.0.0.0
 ```
 
@@ -141,7 +145,7 @@ if [ -d /var/lib/mysql/mysql ]; then
 fi
 
 # install mariadb and set the paths of data file and the owner(user)
-mariadb-install-db --datadir=/var/lib/mysql --user=mysql
+mariadb-install-db --user=mysql
 # run temporary mariadb daemon by user mysql in background
 mariadbd --user=mysql &
 # keep the last executed PID
@@ -209,24 +213,18 @@ RUN rm -fr /var/lib/mysql
 EXPOSE 3306
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 ```
-- debian12(bookworm) is the penultimate version
-- copy local config file to container
-- copy scripts to container's command path
-- grant executing right to container's command path
-- execute mariadb install script
+
 - create /run/mysqld to store pid file [](), and change owner of the directory from root to mysql (the /run dir requires root priviledge to access, then mkdir command should be executed with root, then delegate the ownership to mysql user.)
 - [can't create lock file /var/run/mysqld/mysqlx.sock.lock
 ](https://github.com/docker-library/mysql/issues/887)
-- clean the /var/lib/mysql that potencially has the previously installed mysql data
-- setting port mapping to open 3306
-- execute entrypoint script
+
 
 ## 6. nginx image
 
-`srcs/requirements/nginx/tools/install_nginx.sh` — installs nginx from the
-official nginx.org apt repo (imports and verifies their signing key first,
-per https://nginx.org/en/linux_packages.html#Debian) rather than the
-Debian-bundled package.
+`srcs/requirements/nginx/tools/install_nginx.sh`
+
+- installs nginx from the
+official nginx.org apt repo ([linux_packages](https://nginx.org/en/linux_packages.html#Debian)).
 
 `srcs/requirements/nginx/conf/nginx.conf`:
 
@@ -258,7 +256,14 @@ http {
  }
 }
 ```
-- 
+- [daemon](https://nginx.org/en/docs/ngx_core_module.html#daemon)
+- [Configuring HTTPS servers](https://nginx.org/en/docs/http/configuring_https_servers.html#single_http_https_server)
+- [root](https://nginx.org/en/docs/http/ngx_http_core_module.html#root)
+- [try_files](https://nginx.org/en/docs/http/ngx_http_core_module.html#try_files)
+- [fastcgi_pass](https://nginx.org/en/docs/http/ngx_http_fastcgi_module.html#fastcgi_pass)
+- [fastcgi_param](https://nginx.org/en/docs/http/ngx_http_fastcgi_module.html#fastcgi_param)
+- [	fastcgi_index](https://nginx.org/en/docs/http/ngx_http_fastcgi_module.html#fastcgi_index)
+
 
 
 `srcs/requirements/nginx/Dockerfile`:
@@ -273,7 +278,8 @@ COPY conf/nginx.conf /etc/nginx/nginx.conf
 EXPOSE 443
 CMD ["nginx"]
 ```
--
+
+> [!NOTE] nginx -g "daemon off;" is not needed because 'daemon off' is set in nginx.conf.
 
 ## 7. WordPress + PHP-FPM image
 

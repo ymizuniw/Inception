@@ -5,7 +5,7 @@ if [ -d /var/lib/mysql/mysql ]; then
 	exec mariadbd --user=mysql
 fi
 
-mariadb-install-db --datadir=/var/lib/mysql --user=mysql
+mariadb-install-db --user=mysql
 mariadbd --user=mysql &
 MARIADB_PID=$!
 
