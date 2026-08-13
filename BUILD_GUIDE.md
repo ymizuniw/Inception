@@ -193,8 +193,7 @@ exec mariadbd --user=mysql
 - [docker_temp_server_start()](https://github.com/MariaDB/mariadb-docker/blob/master/docker-entrypoint.sh)
 - [docker_setup_env()](https://github.com/MariaDB/mariadb-docker/blob/master/docker-entrypoint.sh)
 
-- `${DB_USER}@'%'` (not `@'localhost'`) because WordPress connects over the
-  network with various IP addresses, not a Unix socket(mysqld.sock is limited to mariadb container).
+- [MariaDB Authentication](https://mariadb.com/docs/server/security/user-account-management/authentication-from-mariadb-10-4)
 - [Everything about MySQL Users and Logins You Didn't Know and Were Afraid to Ask](https://dev.mysql.com/blog-archive/everything-about-mysql-logins/)
   >This is where we need to mention the infamous anonymous account. An anonymous account is defined as having an empty user name (“”). This means that there can be several anonymous accounts : e.g. “”@localhost, “”@”%.domain.com”, “”@”%” etc.
 
@@ -214,8 +213,9 @@ EXPOSE 3306
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 ```
 
-- create /run/mysqld to store pid file [](), and change owner of the directory from root to mysql (the /run dir requires root priviledge to access, then mkdir command should be executed with root, then delegate the ownership to mysql user.)
-- [can't create lock file /var/run/mysqld/mysqlx.sock.lock
+- [MariaDB Basic Connection Parameters](https://mariadb.com/docs/connectors/mariadb-connector-python/api/connection#basic-connection-parameters)
+- [MariaDB Server PDF](https://github.com/mariadb-corporation/mariadb-docs/releases/latest/download/mariadb-server.pdf)
+- [docker-library can't create lock file /var/run/mysqld/mysqlx.sock.lock
 ](https://github.com/docker-library/mysql/issues/887)
 
 
