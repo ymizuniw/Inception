@@ -178,13 +178,9 @@ wait $MARIADB_PID
 exec mariadbd --user=mysql
 ```
 
-Key points:
-- `-d /var/lib/mysql/mysql` check makes bootstrap run only once; on
-  container restart with a populated volume, it skips straight to `exec
-  mariadbd`().
-- The bootstrap `mariadbd` is started in the background, killed after setup,
-  then re-`exec`'d in the foreground so PID 1 is the real daemon (correct
-  signal handling for `docker stop`).
+- [docker_temp_server_start()](https://github.com/MariaDB/mariadb-docker/blob/master/docker-entrypoint.sh)
+- [docker_setup_env()](https://github.com/MariaDB/mariadb-docker/blob/master/docker-entrypoint.sh)
+
 - `${DB_USER}@'%'` (not `@'localhost'`) because WordPress connects over the
   network, not a Unix socket.
 
@@ -201,10 +197,15 @@ RUN rm -fr /var/lib/mysql
 EXPOSE 3306
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 ```
-
-`rm -fr /var/lib/mysql` clears whatever the apt package pre-seeded, so the
-named volume mounted at that path starts genuinely empty and the
-first-boot branch in the entrypoint reliably triggers.
+- debian12(bookworm) is the penultimate version
+- copy local config file to container
+- copy scripts to container's command path
+- grant executing right to container's command path
+- execute mariadb install script
+- create /run/mysqld to store pid file [](), and change owner of the directory from root to mysql
+- clean the /var/lib/mysql that potencially has the previously installed mysql data
+- setting port mapping to open 3306
+- execute entrypoint script
 
 ## 6. nginx image
 
@@ -243,33 +244,22 @@ http {
  }
 }
 ```
+- 
 
-- `daemon off;` keeps nginx in the foreground as PID 1.
-- `ssl_protocols TLSv1.2 TLSv1.3;` — subject requirement, nothing older.
-- `fastcgi_pass wordpress_php_fpm:9000` resolves via Docker's embedded DNS
-  because `container_name: wordpress_php_fpm` in the compose file is also
-  registered as a network alias on `wp_network`.
-- No HTTP `server {}` block/redirect — only 443 is ever exposed
-  (`ports: ["443:443"]` in compose), matching the "port 443 only" rule.
 
 `srcs/requirements/nginx/Dockerfile`:
 
 ```dockerfile
 FROM debian:bookworm
 COPY tools/ /usr/local/bin/
-
 RUN chmod +x /usr/local/bin/*
 RUN "/usr/local/bin/install_nginx.sh"
 
 COPY conf/nginx.conf /etc/nginx/nginx.conf
-
 EXPOSE 443
 CMD ["nginx"]
 ```
-
-`CMD` (not `ENTRYPOINT`) since nginx needs no pre-start setup script — the
-cert/key arrive via Docker secrets at `/run/secrets/`, not baked into the
-image.
+-
 
 ## 7. WordPress + PHP-FPM image
 
@@ -284,6 +274,7 @@ apt update && apt install -y php8.2-fpm php-mysql php-cli mariadb-client curl &&
 curl -o /usr/local/bin/wp https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
 chmod +x /usr/local/bin/wp
 ```
+[]()
 
 `wp-cli` drives WordPress setup (download, config, `core install`, user
 creation) instead of hand-rolled PHP/SQL.
