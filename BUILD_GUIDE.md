@@ -116,7 +116,7 @@ openssl req -x509 -newkey rsa:2048 \
 ```ini
 [mariadb]
 character-set-server = utf8mb4
-collation-server     = utf8mb4_unicode_ci
+collation-server     = utf8mb4_bin
 
 bind-address = 0.0.0.0
 ```
@@ -135,14 +135,19 @@ apt update && apt install mariadb-server mariadb-client -y && rm -rf /var/lib/ap
 ```sh
 #!/bin/bash
 
+# check if the DB is already existing
 if [ -d /var/lib/mysql/mysql ]; then
   exec mariadbd --user=mysql
 fi
 
+# install mariadb and set the paths of data file and the owner(user)
 mariadb-install-db --datadir=/var/lib/mysql --user=mysql
+# run temporary mariadb daemon by user mysql in background
 mariadbd --user=mysql &
+# keep the last executed PID
 MARIADB_PID=$!
 
+# set necessary env/secret values
 DB_USER=${DB_USER}
 DB_PASSWORD=$(cat /run/secrets/db_password.txt)
 DB_ROOT_PASSWORD=$(cat /run/secrets/db_root_password.txt)
@@ -163,6 +168,7 @@ if [ $i -eq 0 ]; then
     exit 1
 fi
 
+# setup DB and its user.
 mariadb <<-EOF
   CREATE DATABASE wordpress;
   CREATE USER '${DB_USER}'@'%' IDENTIFIED BY '${DB_PASSWORD}';
@@ -172,9 +178,11 @@ mariadb <<-EOF
   FLUSH PRIVILEGES;
 EOF
 
+# kill the temporary mariadb daemon
 kill $MARIADB_PID
 wait $MARIADB_PID
 
+# run the mariadb daemon 
 exec mariadbd --user=mysql
 ```
 
@@ -182,7 +190,9 @@ exec mariadbd --user=mysql
 - [docker_setup_env()](https://github.com/MariaDB/mariadb-docker/blob/master/docker-entrypoint.sh)
 
 - `${DB_USER}@'%'` (not `@'localhost'`) because WordPress connects over the
-  network, not a Unix socket.
+  network with various IP addresses, not a Unix socket(mysqld.sock is limited to mariadb container).
+- [Everything about MySQL Users and Logins You Didn't Know and Were Afraid to Ask](https://dev.mysql.com/blog-archive/everything-about-mysql-logins/)
+  >This is where we need to mention the infamous anonymous account. An anonymous account is defined as having an empty user name (“”). This means that there can be several anonymous accounts : e.g. “”@localhost, “”@”%.domain.com”, “”@”%” etc.
 
 `srcs/requirements/mariadb/Dockerfile`:
 
@@ -192,7 +202,9 @@ COPY conf/my.cnf /etc/mysql/my.cnf
 COPY tools/* /usr/local/bin/
 RUN chmod +x /usr/local/bin/*
 RUN "/usr/local/bin/install_mariadb.sh"
-RUN mkdir /run/mysqld && chown mysql:mysql /run/mysqld
+RUN mkdir /run/mysqld && \
+    chown mysql:mysql /run/mysqld \
+    chmod 1777 /run/mysqld
 RUN rm -fr /var/lib/mysql
 EXPOSE 3306
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
@@ -202,7 +214,9 @@ ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 - copy scripts to container's command path
 - grant executing right to container's command path
 - execute mariadb install script
-- create /run/mysqld to store pid file [](), and change owner of the directory from root to mysql
+- create /run/mysqld to store pid file [](), and change owner of the directory from root to mysql (the /run dir requires root priviledge to access, then mkdir command should be executed with root, then delegate the ownership to mysql user.)
+- [can't create lock file /var/run/mysqld/mysqlx.sock.lock
+](https://github.com/docker-library/mysql/issues/887)
 - clean the /var/lib/mysql that potencially has the previously installed mysql data
 - setting port mapping to open 3306
 - execute entrypoint script
