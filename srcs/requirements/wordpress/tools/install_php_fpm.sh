@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-apt update && apt install -y php8.2-fpm php-mysql php-cli mariadb-client curl && rm -fr /var/lib/apt
+apt update && apt install -y php8.2-fpm php-mysql php-cli php-zip mariadb-client curl && rm -fr /var/lib/apt
 
 curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
 # quick verification using GPG:
