@@ -4,7 +4,7 @@ COPY tools/* /usr/local/bin/
 RUN chmod +x /usr/local/bin/*
 RUN "/usr/local/bin/install_mariadb.sh"
 RUN mkdir /run/mysqld && \
-    chown mysql:mysql /run/mysqld \
+    chown mysql:mysql /run/mysqld && \
     chmod 1777 /run/mysqld
 RUN rm -fr /var/lib/mysql
 EXPOSE 3306
