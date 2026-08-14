@@ -194,6 +194,7 @@ exec mariadbd --user=mysql
 - [docker_setup_env()](https://github.com/MariaDB/mariadb-docker/blob/master/docker-entrypoint.sh)
 
 - [MariaDB Authentication](https://mariadb.com/docs/server/security/user-account-management/authentication-from-mariadb-10-4)
+- [MariaDB User Accounts Created by Default](https://mariadb.com/docs/server/clients-and-utilities/deployment-tools/mariadb-install-db#user-accounts-created-by-default)
 - [Everything about MySQL Users and Logins You Didn't Know and Were Afraid to Ask](https://dev.mysql.com/blog-archive/everything-about-mysql-logins/)
   >This is where we need to mention the infamous anonymous account. An anonymous account is defined as having an empty user name (“”). This means that there can be several anonymous accounts : e.g. “”@localhost, “”@”%.domain.com”, “”@”%” etc.
 
