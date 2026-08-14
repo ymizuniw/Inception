@@ -295,7 +295,11 @@ apt update && apt install -y php8.2-fpm php-mysql php-cli mariadb-client curl &&
 curl -o /usr/local/bin/wp https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
 chmod +x /usr/local/bin/wp
 ```
-[]()
+- [Required extensions](https://make.wordpress.org/hosting/handbook/server-environment/#required-extensions)
+- php8.2-fpm Provides: php-fpm, php-json, php8.2-json
+- php-mysql Depends on: php8.2-mysql, etc.
+- php8.2-mysql Depends on: php-mysqli, php-mysqlnd, php-8.2-mysqli,  php-8.2-mysqlnd, etc.
+
 
 `wp-cli` drives WordPress setup (download, config, `core install`, user
 creation) instead of hand-rolled PHP/SQL.
