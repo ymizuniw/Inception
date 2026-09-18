@@ -1,9 +1,9 @@
 # https://nginx.org/en/linux_packages.html#Debian
 set -euo pipefail
 
-apt update && rm -fr /var/lib/apt/lists/*
+apt update
 
-apt install curl gnupg2 ca-certificates lsb-release debian-archive-keyring
+apt install -y curl gnupg2 ca-certificates lsb-release debian-archive-keyring gettext-base
 # chmod or chgrp to give appropriate permission
 
 curl https://nginx.org/keys/nginx_signing.key | gpg --dearmor \
@@ -25,4 +25,5 @@ gpg --homedir . --dry-run --quiet --no-keyring --import --import-options import-
 #     | tee /etc/apt/sources.list.d/nginx.list
 
 apt update
-apt install nginx
+apt install -y nginx
+rm -fr /var/lib/apt/lists/*

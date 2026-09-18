@@ -2,12 +2,10 @@ daemon off;
 events {}
 http {
  server {
-  # listen 443 ssl;
-  # ssl_certificate /run/secrets/server.crt;
-  # ssl_certificate_key /run/secrets/server.key;
-  # ssl_protocols TLSv1.2 TLSv1.3;
-
-  listen 80; # for the test
+  listen 443 ssl;
+  ssl_certificate /run/secrets/server.crt;
+  ssl_certificate_key /run/secrets/server.key;
+  ssl_protocols TLSv1.2 TLSv1.3;
 
   server_name "$DOMAIN_NAME";
 
