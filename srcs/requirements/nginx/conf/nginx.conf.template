@@ -12,6 +12,10 @@ http {
   root /var/www/wordpress;
   index index.php index.html;
 
+  location / {
+    try_files $uri $uri/ /index.php$is_args$args;
+  }
+
   location ~ \.php$ {
     include fastcgi_params;
     fastcgi_pass wordpress_php_fpm:9000;

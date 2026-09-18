@@ -1,3 +1,4 @@
+#!/bin/bash
 # https://nginx.org/en/linux_packages.html#Debian
 set -euo pipefail
 
